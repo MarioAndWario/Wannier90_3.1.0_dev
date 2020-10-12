@@ -89,6 +89,8 @@ contains
     integer, dimension(0:num_nodes - 1)               :: counts
     integer, dimension(0:num_nodes - 1)               :: displs
 
+    integer :: unit_eqpwan
+
     if (on_root .and. (timing_level > 0)) call io_stopwatch('geninterp_main', 1)
 
     if (on_root) then
@@ -250,6 +252,7 @@ contains
 
       ! Now the printing, only on root node
       if (on_root) then
+         open(unit=unit_eqpwan, file="eqp.wan.dat", form='formatted', status = 'replace')
         do i = 1, num_kpts
           kpt = kpoints(:, i)
           ! First calculate the absolute coordinates for printing
@@ -258,6 +261,11 @@ contains
             frac(j) = recip_lattice(1, j)*kpt(1) + recip_lattice(2, j)*kpt(2) + recip_lattice(3, j)*kpt(3)
           end do
 
+          write(unit_eqpwan,'(F14.9, F14.9, F14.9, I7 )') kpt, num_wann
+          do enidx = 1, num_wann
+             write (unit_eqpwan, '(I8, I8, F16.9)') 1, enidx, globaleig(enidx, i)
+          enddo
+          
           ! I print each line
           if (geninterp_alsofirstder) then
             do enidx = 1, num_wann
@@ -269,7 +277,8 @@ contains
               write (outdat_unit, '(I10,4G18.10)') kpointidx(i), frac, globaleig(enidx, i)
             end do
           end if
-        end do
+       end do
+       close (unit_eqpwan)
         close (outdat_unit)
       end if
     else
